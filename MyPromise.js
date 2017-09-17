@@ -14,6 +14,13 @@ class MyPromise {
           executeImmediately(() => {
             const result = callback(this.value)
             if (result && result.then) {
+              // TODO:
+              // there should be executeImmediately
+              // here somewhere or in when
+              // executing resolve callbacks
+              // to prevent  callbacks of
+              // immedately resolved function
+              // to be fired in the same stack
               result.then(v => resolve(v))
             } else {
               executeImmediately(() => resolve(result))
