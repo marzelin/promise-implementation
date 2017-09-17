@@ -11,19 +11,14 @@ class MyPromise {
     this.then = callback => {
       return new MyPromise(resolve => {
         if (this.state === "settled***") {
+          // async contract has to be kept:
+          // execute after stack and tick queue
           executeImmediately(() => {
             const result = callback(this.value)
             if (result && result.then) {
-              // TODO:
-              // there should be executeImmediately
-              // here somewhere or in when
-              // executing resolve callbacks
-              // to prevent  callbacks of
-              // immedately resolved function
-              // to be fired in the same stack
               result.then(v => resolve(v))
             } else {
-              executeImmediately(() => resolve(result))
+              resolve(result)
             }
           })
         } else {
@@ -34,7 +29,12 @@ class MyPromise {
     this.resolve = v => {
       this.state = "settled***"
       this.value = v
-      this.callbacks.forEach(callback => callback(v))
+      const { callbacks } = this
+      if (callbacks.length) {
+        // resolve cannot fire callbacks immediately
+        // they must be executed after emptying current stack and tick queue
+        executeImmediately(() => callbacks.forEach(callback => callback(v)))
+      }
     }
     fn(this.resolve)
   }
